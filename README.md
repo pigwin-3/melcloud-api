@@ -1,3 +1,5 @@
+Warning: this ReadMe was made with ai and is untested but probs fine
+
 # MELCloud API
 
 A simple and intuitive Node.js client for the MELCloud API to control Mitsubishi air conditioning devices.

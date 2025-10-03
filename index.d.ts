@@ -1,3 +1,4 @@
+// 100% AI generated file. May contain errors.
 declare module 'melcloud-api' {
     export interface MELCloudOptions {
         language?: number;

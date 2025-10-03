@@ -1,5 +1,5 @@
 const MELCloudAPI = require('./index');
-
+// Warning: This file is created with AI, and may contain errors.
 /**
  * Simple test script
  * Create a test-config.js file with your credentials:

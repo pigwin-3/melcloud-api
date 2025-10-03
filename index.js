@@ -1,3 +1,5 @@
+// Hand decoded from MELCloud app requests and responses
+// AI used to write all coments and some code parts
 const axios = require('axios');
 
 class MELCloudAPI {
