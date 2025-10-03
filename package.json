@@ -1,0 +1,31 @@
+{
+  "name": "melcloud-api",
+  "version": "1.0.0",
+  "description": "A simple and intuitive Node.js client for the MELCloud API to control Mitsubishi air conditioning devices",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "melcloud",
+    "mitsubishi",
+    "hvac",
+    "air-conditioning",
+    "home-automation",
+    "iot",
+    "climate-control"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/..."
+  },
+  "dependencies": {
+    "axios": "^1.5.1"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}

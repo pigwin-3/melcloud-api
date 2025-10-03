@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+.env
+test.js
+test-config.js
+.git
+.gitignore
