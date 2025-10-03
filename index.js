@@ -10,6 +10,7 @@ class MELCloudAPI {
         this.appVersion = options.appVersion || '1.34.13.0';
         this.contextKey = null;
         this.baseURL = 'https://app.melcloud.com/Mitsubishi.Wifi.Client';
+        this.maxRetries = 2;
     }
 
     /**
@@ -17,16 +18,16 @@ class MELCloudAPI {
      * @returns {Promise<string>} Context key for authenticated requests
      */
     async login() {
-        const credentials = {
-            Email: this.email,
-            Password: this.password,
-            Language: this.language,
-            AppVersion: this.appVersion,
-            Persist: false,
-            CaptchaResponse: null,
-        };
+        return this._retryRequest(async () => {
+            const credentials = {
+                Email: this.email,
+                Password: this.password,
+                Language: this.language,
+                AppVersion: this.appVersion,
+                Persist: false,
+                CaptchaResponse: null,
+            };
 
-        try {
             const response = await axios.post(
                 `${this.baseURL}/Login/ClientLogin2`,
                 credentials,
@@ -35,9 +36,7 @@ class MELCloudAPI {
             
             this.contextKey = response.data.LoginData.ContextKey;
             return this.contextKey;
-        } catch (error) {
-            throw new Error(`MELCloud login failed: ${error.message}`);
-        }
+        });
     }
 
     /**
@@ -51,13 +50,56 @@ class MELCloudAPI {
     }
 
     /**
+     * Helper method to retry requests with exponential backoff
+     * @private
+     */
+    async _retryRequest(requestFn, retries = 0) {
+        try {
+            return await requestFn();
+        } catch (error) {
+            const shouldRetry = this._shouldRetryError(error);
+            
+            if (shouldRetry && retries < this.maxRetries) {
+                // Clear context key if it's an auth error
+                if (error.response && error.response.status === 401) {
+                    this.contextKey = null;
+                }
+                
+                // Exponential backoff: 1s, 2s, 4s...
+                const delay = Math.pow(2, retries) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                return this._retryRequest(requestFn, retries + 1);
+            }
+            
+            throw error;
+        }
+    }
+
+    /**
+     * Determine if an error should trigger a retry
+     * @private
+     */
+    _shouldRetryError(error) {
+        // Retry on network errors, timeouts, and certain HTTP status codes
+        if (!error.response) {
+            // Network error, timeout, etc.
+            return true;
+        }
+        
+        const status = error.response.status;
+        // Retry on auth errors, server errors, and rate limiting
+        return status === 401 || status === 429 || (status >= 500 && status < 600);
+    }
+
+    /**
      * Get all devices in account
      * @returns {Promise<Array>} Array of all devices with their deets
      */
     async getDevices() {
-        await this._ensureAuthenticated();
+        return this._retryRequest(async () => {
+            await this._ensureAuthenticated();
 
-        try {
             const response = await axios.get(
                 `${this.baseURL}/User/ListDevices`,
                 { headers: { 'X-MitsContextKey': this.contextKey } }
@@ -84,13 +126,7 @@ class MELCloudAPI {
             });
 
             return devices;
-        } catch (error) {
-            if (error.response && error.response.status === 401) {
-                this.contextKey = null;
-                return this.getDevices(); // Retry after clearing token
-            }
-            throw new Error(`Failed to fetch devices: ${error.message}`);
-        }
+        });
     }
 
     /**
@@ -100,19 +136,19 @@ class MELCloudAPI {
      * @returns {Promise<Object>} Device deets
      */
     async getDevice(deviceId, buildingId = null) {
-        await this._ensureAuthenticated();
+        return this._retryRequest(async () => {
+            await this._ensureAuthenticated();
 
-        // If buildingId not provided, fetch it from device list
-        if (!buildingId) {
-            const devices = await this.getDevices();
-            const device = devices.find(d => d.id === deviceId);
-            if (!device) {
-                throw new Error(`Device with ID ${deviceId} not found`);
+            // If buildingId not provided, fetch it from device list
+            if (!buildingId) {
+                const devices = await this.getDevices();
+                const device = devices.find(d => d.id === deviceId);
+                if (!device) {
+                    throw new Error(`Device with ID ${deviceId} not found`);
+                }
+                buildingId = device.buildingId;
             }
-            buildingId = device.buildingId;
-        }
 
-        try {
             const response = await axios.get(
                 `${this.baseURL}/Device/Get?id=${deviceId}&buildingID=${buildingId}`,
                 { headers: { 'X-MitsContextKey': this.contextKey } }
@@ -123,13 +159,7 @@ class MELCloudAPI {
                 buildingId: buildingId,
                 ...this._parseDeviceData(response.data)
             };
-        } catch (error) {
-            if (error.response && error.response.status === 401) {
-                this.contextKey = null;
-                return this.getDevice(deviceId, buildingId);
-            }
-            throw new Error(`Failed to fetch device: ${error.message}`);
-        }
+        });
     }
 
     /**
@@ -147,100 +177,100 @@ class MELCloudAPI {
      * info is from the device i got no idea if this works for other devices
      */
     async setDevice(deviceId, params, buildingId = null) {
-        await this._ensureAuthenticated();
+        return this._retryRequest(async () => {
+            await this._ensureAuthenticated();
 
-        // Get current device status
-        const currentStatus = await this.getDevice(deviceId, buildingId);
-        buildingId = currentStatus.buildingId;
+            // Get current device status
+            const currentStatus = await this.getDevice(deviceId, buildingId);
+            buildingId = currentStatus.buildingId;
 
-        // Build payload with current values
-        const payload = {
-            DeviceID: deviceId,
-            DeviceType: 0,
-            Power: currentStatus.power,
-            SetTemperature: currentStatus.temperature,
-            SetFanSpeed: currentStatus.fanSpeedRaw,
-            OperationMode: currentStatus.modeRaw,
-            VaneHorizontal: currentStatus.vaneHorizontalRaw,
-            VaneVertical: currentStatus.vaneVerticalRaw,
-            EffectiveFlags: 0
-        };
+            // Build payload with current values
+            const payload = {
+                DeviceID: deviceId,
+                DeviceType: 0,
+                Power: currentStatus.power,
+                SetTemperature: currentStatus.temperature,
+                SetFanSpeed: currentStatus.fanSpeedRaw,
+                OperationMode: currentStatus.modeRaw,
+                VaneHorizontal: currentStatus.vaneHorizontalRaw,
+                VaneVertical: currentStatus.vaneVerticalRaw,
+                EffectiveFlags: 0
+            };
 
-        // Operation modes mapping
-        const modeMappings = {
-            heat: 1,
-            hot: 1, // Alias
-            h: 1, // Alias
-            dry: 2,
-            d: 2, // Alias
-            cold: 3,
-            cool: 3, // Alias
-            c: 3, // Alias
-            fan: 7,
-            air: 7, // Alias
-            f: 7, // Alias
-            auto: 8,
-            a: 8 // Alias
-        };
+            // Operation modes mapping
+            const modeMappings = {
+                heat: 1,
+                hot: 1, // Alias
+                h: 1, // Alias
+                dry: 2,
+                d: 2, // Alias
+                cold: 3,
+                cool: 3, // Alias
+                c: 3, // Alias
+                fan: 7,
+                air: 7, // Alias
+                f: 7, // Alias
+                auto: 8,
+                a: 8 // Alias
+            };
 
-        // Vane mappings
-        const vaneHorizontalMappings = { auto: 0, swing: 12 };
-        const vaneVerticalMappings = { auto: 0, swing: 7 };
+            // Vane mappings
+            const vaneHorizontalMappings = { auto: 0, swing: 12 };
+            const vaneVerticalMappings = { auto: 0, swing: 7 };
 
-        // EffectiveFlags mapping
-        const flagMappings = {
-            power: 1,
-            operationmode: 2,
-            settemperature: 4,
-            setfanspeed: 8,
-            vanevertical: 16,
-            // idk if anything is here might check later
-            vanehorizontal: 256
-        };
+            // EffectiveFlags mapping
+            const flagMappings = {
+                power: 1,
+                operationmode: 2,
+                settemperature: 4,
+                setfanspeed: 8,
+                vanevertical: 16,
+                // idk if anything is here might check later
+                vanehorizontal: 256
+            };
 
-        // Update parameters
-        if (params.power !== undefined) {
-            payload.Power = Boolean(params.power);
-            payload.EffectiveFlags += flagMappings.power;
-        }
+            // Update parameters
+            if (params.power !== undefined) {
+                payload.Power = Boolean(params.power);
+                payload.EffectiveFlags += flagMappings.power;
+            }
 
-        if (params.temperature !== undefined) {
-            payload.SetTemperature = parseFloat(params.temperature);
-            payload.EffectiveFlags += flagMappings.settemperature;
-        }
+            if (params.temperature !== undefined) {
+                payload.SetTemperature = parseFloat(params.temperature);
+                payload.EffectiveFlags += flagMappings.settemperature;
+            }
 
-        if (params.fanSpeed !== undefined) {
-            payload.SetFanSpeed = params.fanSpeed === 'auto' ? 0 : parseInt(params.fanSpeed, 10);
-            payload.EffectiveFlags += flagMappings.setfanspeed;
-        }
+            if (params.fanSpeed !== undefined) {
+                payload.SetFanSpeed = params.fanSpeed === 'auto' ? 0 : parseInt(params.fanSpeed, 10);
+                payload.EffectiveFlags += flagMappings.setfanspeed;
+            }
 
-        if (params.mode !== undefined) {
-            const mode = typeof params.mode === 'string' ? params.mode.toLowerCase() : params.mode;
-            payload.OperationMode = modeMappings[mode] || parseInt(mode, 10);
-            payload.EffectiveFlags += flagMappings.operationmode;
-        }
+            if (params.mode !== undefined) {
+                const mode = typeof params.mode === 'string' ? params.mode.toLowerCase() : params.mode;
+                payload.OperationMode = modeMappings[mode] || parseInt(mode, 10);
+                payload.EffectiveFlags += flagMappings.operationmode;
+            }
 
-        if (params.vaneHorizontal !== undefined) {
-            const vane = typeof params.vaneHorizontal === 'string' ? params.vaneHorizontal.toLowerCase() : params.vaneHorizontal;
-            payload.VaneHorizontal = vaneHorizontalMappings[vane] !== undefined
-                ? vaneHorizontalMappings[vane]
-                : parseInt(vane, 10);
-            payload.EffectiveFlags += flagMappings.vanehorizontal;
-        }
+            if (params.vaneHorizontal !== undefined) {
+                const vane = typeof params.vaneHorizontal === 'string' ? params.vaneHorizontal.toLowerCase() : params.vaneHorizontal;
+                payload.VaneHorizontal = vaneHorizontalMappings[vane] !== undefined
+                    ? vaneHorizontalMappings[vane]
+                    : parseInt(vane, 10);
+                payload.EffectiveFlags += flagMappings.vanehorizontal;
+            }
 
-        if (params.vaneVertical !== undefined) {
-            const vane = typeof params.vaneVertical === 'string' ? params.vaneVertical.toLowerCase() : params.vaneVertical;
-            payload.VaneVertical = vaneVerticalMappings[vane] !== undefined
-                ? vaneVerticalMappings[vane]
-                : parseInt(vane, 10);
-            payload.EffectiveFlags += flagMappings.vanevertical;
-        }
+            if (params.vaneVertical !== undefined) {
+                const vane = typeof params.vaneVertical === 'string' ? params.vaneVertical.toLowerCase() : params.vaneVertical;
+                payload.VaneVertical = vaneVerticalMappings[vane] !== undefined
+                    ? vaneVerticalMappings[vane]
+                    : parseInt(vane, 10);
+                payload.EffectiveFlags += flagMappings.vanevertical;
+            }
 
-        if (payload.EffectiveFlags === 0) {
-            throw new Error('No valid parameters provided to set');
-        }
+            if (payload.EffectiveFlags === 0) {
+                throw new Error('No valid parameters provided to set');
+            }
 
-        try {
             await axios.post(
                 `${this.baseURL}/Device/SetAta`,
                 payload,
@@ -255,13 +285,7 @@ class MELCloudAPI {
             // Return updated device state after a brief delay
             await new Promise(resolve => setTimeout(resolve, 1000));
             return this.getDevice(deviceId, buildingId);
-        } catch (error) {
-            if (error.response && error.response.status === 401) {
-                this.contextKey = null;
-                return this.setDevice(deviceId, params, buildingId);
-            }
-            throw new Error(`Failed to set device parameters: ${error.message}`);
-        }
+        });
     }
 
     /**
