@@ -186,7 +186,7 @@ console.log(status.hasError); // true/false
 
 ---
 
-## 🌡️ Air Conditioner Control
+## Air Conditioner Control
 
 ### `setDevice(deviceId, params, buildingId)`
 Control air conditioning units with all standard parameters.
@@ -270,7 +270,7 @@ await client.setZoneTemperature(deviceId, 2, 20); // Zone 2 to 20°C
 
 ---
 
-## ⚡ Energy Monitoring
+## Energy Monitoring
 
 ### `getEnergyReport(deviceId, fromDate, toDate, buildingId)`
 Get detailed energy consumption and production data.
