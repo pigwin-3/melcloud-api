@@ -1,6 +1,6 @@
 {
   "name": "melcloud-api",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A simple and intuitive Node.js client for the MELCloud API to control Mitsubishi air conditioning devices",
   "main": "index.js",
   "types": "index.d.ts",
