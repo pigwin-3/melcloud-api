@@ -21,12 +21,12 @@ async function test() {
         // Test 1: Login
         console.log('1. Testing login...');
         await client.login();
-        console.log('✓ Login successful\n');
+        console.log('Login successful\n');
 
         // Test 2: Get all devices
         console.log('2. Getting all devices...');
         const devices = await client.getDevices();
-        console.log(`✓ Found ${devices.length} device(s):\n`);
+        console.log(`Found ${devices.length} device(s):\n`);
         
         devices.forEach(device => {
             console.log(`   ${device.name} (ID: ${device.id})`);
@@ -43,13 +43,13 @@ async function test() {
             // Test 3: Get specific device
             console.log(`3. Getting device ${deviceId} details...`);
             const device = await client.getDevice(deviceId);
-            console.log('✓ Device details retrieved\n');
+            console.log('Device details retrieved\n');
 
             // Test 4: Set device (comment out if you don't want to actually change settings)
             console.log('4. Testing device control...');
             console.log('   (Skipped - uncomment in test.js to actually test control)');
             // await client.setDevice(deviceId, { fanSpeed: 'auto' });
-            // console.log('✓ Device control successful\n');
+            // console.log('Device control successful\n');
         }
 
         console.log('All tests completed successfully!');

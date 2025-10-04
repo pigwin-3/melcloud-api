@@ -1,31 +1,31 @@
-# MELCloud API 🌡️
+# MELCloud API
 
 A comprehensive Node.js client for the MELCloud API supporting **Air Conditioners** and **Heat Pumps** with advanced features including energy monitoring, WiFi diagnostics, and robust error handling.
 
 [![npm version](https://badge.fury.io/js/melcloud-api.svg)](https://badge.fury.io/js/melcloud-api)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Features
+## Features
 
-### ✅ **Device Support**
+### **Device Support**
 - **Air Conditioners (ATA)** - Complete control and monitoring
 - **Heat Pumps (ATW)** - Advanced multi-zone control with hot water management
 - **Auto-detection** - Automatically detects device types and capabilities
 
-### ✅ **Advanced Control**
+### **Advanced Control**
 - **Multi-zone Heat Pumps** - Independent control of Zone 1 & Zone 2
 - **Hot Water Priority** - Tank water temperature and priority mode control
 - **Flow Temperature Control** - Heating and cooling flow temperatures
 - **All Standard Functions** - Power, temperature, fan speed, vane positions, operation modes
 
-### ✅ **Monitoring & Diagnostics**
+### **Monitoring & Diagnostics**
 - **Energy Reports** - Detailed power consumption and production data
 - **WiFi Signal Strength** - Monitor device connectivity
 - **Error Detection** - Comprehensive error codes and messages
 - **Outdoor Temperature** - Environmental monitoring
 - **Device Status** - Online/offline, communication timestamps
 
-### ✅ **Reliability**
+### **Reliability**
 - **Auto-retry Logic** - Handles network issues and expired sessions
 - **Exponential Backoff** - Smart retry timing to avoid server overload
 - **Rate Limiting Support** - Respects MELCloud's rate limits
@@ -33,7 +33,7 @@ A comprehensive Node.js client for the MELCloud API supporting **Air Conditioner
 
 ---
 
-## 📦 Installation
+## Installation
 
 ```bash
 npm install melcloud-api
@@ -41,7 +41,7 @@ npm install melcloud-api
 
 ---
 
-## 🎯 Quick Start
+## Quick Start
 
 ```javascript
 const MELCloudAPI = require('melcloud-api');
@@ -78,7 +78,7 @@ console.log('Total consumption:', energyReport.totalPowerConsumption, 'kWh');
 
 ---
 
-## 📖 API Reference
+## API Reference
 
 ### Constructor
 
@@ -95,7 +95,7 @@ new MELCloudAPI(email, password, options)
 
 ---
 
-## 🔍 Device Discovery
+## Device Discovery
 
 ### `getDevices()`
 Get all devices with comprehensive information including error states, WiFi signal, and capabilities.
@@ -222,7 +222,7 @@ await client.setTemperature(deviceId, 22);
 
 ---
 
-## 🏠 Heat Pump Control
+## Heat Pump Control
 
 ### `setHeatPumpDevice(deviceId, params, buildingId)`
 Advanced control for heat pump (ATW) devices with multi-zone and hot water support.
@@ -300,7 +300,7 @@ console.log('Raw data:', report.rawData); // Full MELCloud response
 
 ---
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Error Handling & Diagnostics
 
@@ -397,7 +397,7 @@ app.listen(3000, () => console.log('MELCloud API Server running on port 3000'));
 
 ---
 
-## 🎯 TypeScript Support
+## TypeScript Support
 
 Full TypeScript definitions are included:
 
@@ -426,7 +426,7 @@ await client.setHeatPumpDevice(deviceId, hpParams);
 
 ---
 
-## ⚠️ Error Codes Reference
+## Error Codes Reference
 
 | Code | Meaning |
 |------|---------|
@@ -441,23 +441,23 @@ Common error scenarios:
 
 ---
 
-## 📊 Comparison with Other Libraries
+## Features
 
-| Feature | melcloud-api | Others |
-|---------|--------------|--------|
-| Air Conditioner Support | ✅ Full | ✅ Basic |
-| Heat Pump Support | ✅ Complete | ❌ Limited |
-| Energy Monitoring | ✅ Yes | ❌ No |
-| WiFi Diagnostics | ✅ Yes | ❌ No |
-| Error Handling | ✅ Advanced | ❌ Basic |
-| Auto-retry Logic | ✅ Smart | ❌ Manual |
-| TypeScript Support | ✅ Full | ❌ Partial |
-| Multi-zone Heat Pumps | ✅ Yes | ❌ No |
-| Hot Water Control | ✅ Yes | ❌ No |
+| Feature | melcloud-api |
+|---------|--------------|
+| Air Conditioner Support | Full |
+| Heat Pump Support | Complete |
+| Energy Monitoring | Yes |
+| WiFi Diagnostics | Yes |
+| Error Handling | Advanced |
+| Auto-retry Logic | Smart |
+| TypeScript Support | Full |
+| Multi-zone Heat Pumps | Yes |
+| Hot Water Control | Yes |
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details.
 
@@ -473,4 +473,4 @@ This is an **unofficial** library and is not affiliated with Mitsubishi Electric
 
 ---
 
-**⭐ If this library helps you, please consider giving it a star on GitHub!**
+**If this library helps you, please consider giving it a star on GitHub! My ego would like that.**
