@@ -154,10 +154,14 @@ class MELCloudAPI {
                 { headers: { 'X-MitsContextKey': this.contextKey } }
             );
 
+            const parsed = this._parseDeviceData(response.data);
+
             return {
                 id: deviceId,
                 buildingId: buildingId,
-                ...this._parseDeviceData(response.data)
+                name: response.data.DeviceName || response.data.Name,
+                type: parsed.deviceType,
+                ...parsed
             };
         });
     }
@@ -314,12 +318,15 @@ class MELCloudAPI {
             12: 'swing'
         };
 
+        const fanSpeedRaw = deviceData.SetFanSpeed ?? deviceData.FanSpeed;
+
         return {
+            deviceType: deviceData.DeviceType,
             power: deviceData.Power,
             temperature: deviceData.SetTemperature,
             roomTemperature: deviceData.RoomTemperature,
-            fanSpeed: fanSpeeds[deviceData.SetFanSpeed] || fanSpeeds[deviceData.FanSpeed] || 'unknown',
-            fanSpeedRaw: deviceData.SetFanSpeed || deviceData.FanSpeed,
+            fanSpeed: fanSpeeds[fanSpeedRaw] || 'unknown',
+            fanSpeedRaw: fanSpeedRaw,
             mode: operationModes[deviceData.OperationMode] || 'unknown',
             modeRaw: deviceData.OperationMode,
             vaneHorizontal: vanePositions[deviceData.VaneHorizontalDirection] || 'unknown',

@@ -11,6 +11,7 @@ declare module 'melcloud-api' {
         buildingId: number;
         name: string;
         type: number;
+        deviceType: number;
         power: boolean;
         temperature: number;
         roomTemperature: number;

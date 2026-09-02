@@ -45,11 +45,23 @@ async function test() {
             const device = await client.getDevice(deviceId);
             console.log('Device details retrieved\n');
 
-            // Test 4: Set device (comment out if you don't want to actually change settings)
-            console.log('4. Testing device control...');
-            console.log('   (Skipped - uncomment in test.js to actually test control)');
-            // await client.setDevice(deviceId, { fanSpeed: 'auto' });
-            // console.log('Device control successful\n');
+            // Test 4: Temperature round-trip (reads, changes by 2°, restores original)
+            console.log('4. Testing temperature control (read -> +2° -> restore)...');
+            const originalTemp = device.temperature;
+            const maxHeat = device.maxTempHeat;
+            console.log(`   Current target: ${originalTemp}°C (mode: ${device.mode}, room: ${device.roomTemperature}°C)`);
+
+            // Go 2° hotter, unless that would exceed the heat max - then go 2° lower
+            const goUp = !(maxHeat != null && originalTemp + 2 > maxHeat);
+            const testTemp = goUp ? originalTemp + 2 : originalTemp - 2;
+
+            console.log(`   Setting to ${testTemp}°C...`);
+            const changed = await client.setDevice(deviceId, { temperature: testTemp });
+            console.log(`   Read back: ${changed.temperature}°C ${changed.temperature === testTemp ? '(match)' : '(MISMATCH)'}`);
+
+            console.log(`   Restoring to ${originalTemp}°C...`);
+            const restored = await client.setDevice(deviceId, { temperature: originalTemp });
+            console.log(`   Read back: ${restored.temperature}°C ${restored.temperature === originalTemp ? '(restored)' : '(NOT RESTORED)'}\n`);
         }
 
         console.log('All tests completed successfully!');
